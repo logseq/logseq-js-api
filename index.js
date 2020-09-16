@@ -5,9 +5,16 @@ var listeners = {
     }
 }
 
+function randomString(length) {
+    return Math.round((Math.pow(36, length + 1) - Math.random() * Math.pow(36, length))).toString(36).slice(1);
+}
+
 var post = postMessage;
+var responseQueue = {};
 
 var logseq = {
+
+    
 
     events: {
         addEventListener: (ev, fn) => {
@@ -23,6 +30,24 @@ var logseq = {
             overwriteBlockContent: (id, content) => {
                 post(["actions", {actionName: "actions/ui/block/overwrite-block-content", arguments: {content: content, id: id}}])
             }
+        },
+        get: { // Get data from main thread
+            currentPage: () => {
+                let actionId = "c" + randomString(8);
+                return new Promise((resolve, reject) => {
+                    responseQueue[actionId] = {resolve: resolve, reject: reject};
+                    post(["actions", {actionName: "actions/get/current-page", "event-id": actionId}]);
+                    setTimeout(reject, 5000);
+                })
+            },
+            currentBlock: () => {
+                let actionId = "c" + randomString(8);
+                return new Promise((resolve, reject) => {
+                    responseQueue[actionId] = {resolve: resolve, reject: reject};
+                    post(["actions", {actionName: "actions/get/current-block", "event-id": actionId}]);
+                    setTimeout(reject, 5000);
+                })
+            }
         }
     }
 }
@@ -34,5 +59,8 @@ onmessage = (msg) => {
         listeners.events[message.eventName].forEach(fn => {
             fn(message.context)
         })
+    } else if (channel === "response" && Object.keys(responseQueue).includes(message["event-id"])) {
+        // Resolve promise to object
+
     }
 }
