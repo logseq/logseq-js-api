@@ -70,7 +70,6 @@ onmessage = (msg) => {
 
 if (isIframe) {
     window.addEventListener('message', (msg) => {
-        console.log("a")
         if (msg.ports && msg.ports[0]) {
             port = msg.ports[0]
             post = (m) => { port.postMessage(m) };
